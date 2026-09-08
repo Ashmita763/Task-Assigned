@@ -10,9 +10,21 @@ import {
 import { FaAngleDown } from "react-icons/fa6";
 
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 
 const Navbar = () => {
+  const { user } = useAuth();
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "?";
+
   return (
     <>
       {/*  TOP NAVBAR  */}
@@ -29,16 +41,16 @@ const Navbar = () => {
           >
             <FaGraduationCap
               size={28}
-              className="text-purple-600"
+              className="text-slate-600"
             />
 
-            <span className="text-2xl font-bold text-purple-600">
+            <span className="text-2xl font-bold text-slate-800">
               CodAcademy
             </span>
           </Link>
 
 
-          {/* Explore */}
+          {/* Explore 
 
           <Link
             to="/courses"
@@ -47,7 +59,8 @@ const Navbar = () => {
            <button>Explore
             <FaAngleDown/>
             </button> 
-          </Link>
+          </Link>//
+          */}
 
 
           {/* Search */}
@@ -88,12 +101,7 @@ const Navbar = () => {
 
             {/* Wishlist */}
 
-            <Link to="/wishlist">
-              <FaHeart
-                size={20}
-                className="text-gray-600 hover:text-purple-600"
-              />
-            </Link>
+
 
 
             {/* Cart */}
@@ -120,9 +128,10 @@ const Navbar = () => {
 
             <Link
               to="/profile"
+              title={user?.name || "Profile"}
               className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-semibold"
             >
-              AB
+              {initials}
             </Link>
 
           </div>
