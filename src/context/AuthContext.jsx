@@ -11,6 +11,7 @@ const TOKEN_KEY = "auth_token";
 // Create authentication context
 const AuthContext = createContext();
 
+
 // GraphQL backend URL
 const GRAPHQL_URL = "http://localhost:3000/graphql";
 
@@ -142,27 +143,50 @@ export const AuthProvider = ({ children }) => {
   // REGISTER
   // 
 
-  const register = async (name, email, password) => {
+  const register = async (
+  name, 
+  email, 
+  phone,
+  role,
+  educationalLevel,
+  faculty,
+  expertise,
+  qualification,
+  experience, password) => {
 
     try {
 
       const query = `
-        mutation Register(
-          $name: String!,
-          $email: String!,
-          $password: String!
-        ) {
-          register(
-            name: $name,
-            email: $email,
-            password: $password
-          ) {
-            success
-            message
-          }
-        }
-      `;
-
+  mutation Register(
+    $name: String!
+    $email: String!
+    $phone: String!
+    $role: String!
+    $educationalLevel: String
+    $faculty: String
+    $expertise: String
+    $qualification: String
+    $experience: String
+    $password: String!
+  ) {
+    register(
+      name: $name
+      email: $email
+      phone: $phone
+      role: $role
+      educationalLevel: $educationalLevel
+      faculty: $faculty
+      expertise: $expertise
+      qualification: $qualification
+      experience: $experience
+      password: $password
+    ) {
+      success
+      message
+    }
+  }
+`;
+    
       const data = await graphqlRequest(query, {
         name,
         email,

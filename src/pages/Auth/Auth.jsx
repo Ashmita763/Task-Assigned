@@ -1,23 +1,42 @@
-
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
 const Auth = () => {
+  // Login / Register state
   const [isLogin, setIsLogin] = useState(true);
+
+  // Registration role
+  const [registerRole, setRegisterRole] = useState("student");
 
   // Form states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  // Student fields
+  const [educationalLevel, setEducationalLevel] = useState("");
+  const [faculty, setFaculty] = useState("");
+
+  // Expert fields
+  const [expertise, setExpertise] = useState("");
+  const [qualification, setQualification] = useState("");
+  const [experience, setExperience] = useState("");
+
+  // Password
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  // Get functions from AuthContext
   const { login, register } = useAuth();
+
+  // ==========================================
+  // LOGIN
+  // ==========================================
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,63 +49,106 @@ const Auth = () => {
       return;
     }
 
-    const destination = result.user?.role === "admin" ? "/admin" : "/dashboard";
-    navigate(destination);
+    const role = result.user?.role;
+
+    if (role === "admin") {
+      navigate("/admin");
+    } else if (role === "expert") {
+      navigate("/expert-dashboard");
+    } else if (role === "student") {
+      navigate("/student-dashboard");
+    }
   };
+
+  // ==========================================
+  // REGISTER
+  // ==========================================
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
 
+    // Confirm password
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
+    // Password length
     if (password.length < 8) {
       setError("Password must be at least 8 characters long.");
       return;
     }
 
+    // Uppercase
     if (!/[A-Z]/.test(password)) {
       setError("Password must contain at least one uppercase letter.");
       return;
     }
 
+    // Lowercase
     if (!/[a-z]/.test(password)) {
       setError("Password must contain at least one lowercase letter.");
       return;
     }
 
+    // Number
     if (!/\d/.test(password)) {
       setError("Password must contain at least one number.");
       return;
     }
 
+    // Special character
     if (!/[^A-Za-z0-9]/.test(password)) {
       setError("Password must contain at least one special character.");
       return;
     }
 
-    const result = await register(name, email, password);
+    // Register user
+    const result = await register({
+      name,
+      email,
+      phone,
+      role: registerRole,
+      educationalLevel,
+      faculty,
+      expertise,
+      qualification,
+      experience,
+      password,
+    });
 
     if (!result.success) {
       setError(result.message);
       return;
     }
 
+    // Clear passwords
     setPassword("");
     setConfirmPassword("");
-    navigate("/verify-otp", { state: { email, mode: "register" } });
+
+    // Go to OTP verification
+    navigate("/verify-otp", {
+      state: {
+        email,
+        mode: "register",
+      },
+    });
   };
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div className="min-h-screen bg-purple-100 flex items-center justify-center px-4 sm:px-6 py-8">
 
-      {/* Main Container */}
       <div className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-center gap-10 lg:gap-16">
 
-        {/* LEFT SIDE */}
+        {/* ==========================================
+            LEFT SIDE
+        ========================================== */}
+
         <div className="w-full md:w-1/2 text-center">
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-gray-900">
@@ -101,58 +163,89 @@ const Auth = () => {
 
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* ==========================================
+            RIGHT SIDE - AUTH CARD
+        ========================================== */}
+
         <div className="w-full md:w-1/2 max-w-md bg-white rounded-2xl shadow-xl p-5 sm:p-7 md:p-8">
 
-          {/* Login / Signup Tabs */}
-          <div className="flex border-b border-gray-200 mb-7">
+          {/* ==========================================
+              LOGIN / STUDENT / EXPERT TABS
+          ========================================== */}
 
-            {/* Login */}
+          <div className="grid grid-cols-2 gap-1 bg-gray-100 rounded-xl p-1 mb-7">
+
+            {/* LOGIN */}
             <button
               type="button"
               onClick={() => {
                 setIsLogin(true);
                 setError("");
               }}
-              className={`w-1/2 py-3 font-semibold transition ${
+              className={`py-3 rounded-lg font-semibold transition ${
                 isLogin
-                  ? "text-purple-600 border-b-2 border-purple-600"
+                  ? "bg-white text-purple-600 shadow-sm"
                   : "text-gray-400 hover:text-gray-600"
               }`}
             >
               Login
             </button>
 
-            {/* Signup */}
+            {/* STUDENT */}
             <button
               type="button"
               onClick={() => {
                 setIsLogin(false);
+                setRegisterRole("student");
                 setError("");
               }}
-              className={`w-1/2 py-3 font-semibold transition ${
-                !isLogin
-                  ? "text-purple-600 border-b-2 border-purple-600"
+              className={`py-3 rounded-lg font-semibold transition ${
+                !isLogin && registerRole === "student"
+                  ? "bg-white text-purple-600 shadow-sm"
                   : "text-gray-400 hover:text-gray-600"
               }`}
             >
-              Sign Up
+              Student
+            </button>
+
+            {/* EXPERT */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(false);
+                setRegisterRole("expert");
+                setError("");
+              }}
+              className={`py-3 rounded-lg font-semibold transition ${
+                !isLogin && registerRole === "expert"
+                  ? "bg-white text-purple-600 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              Expert
             </button>
 
           </div>
 
-          {/* Error Message */}
+          {/* ==========================================
+              ERROR MESSAGE
+          ========================================== */}
+
           {error && (
             <div className="mb-5 p-3 bg-red-100 text-red-600 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          {/* ================= LOGIN FORM ================= */}
+          {/* ==========================================
+              LOGIN FORM
+          ========================================== */}
+
           {isLogin && (
             <form onSubmit={handleLogin} className="space-y-5">
 
               <div>
+
                 <h2 className="text-2xl font-bold text-gray-900">
                   Welcome Back!!
                 </h2>
@@ -160,10 +253,13 @@ const Auth = () => {
                 <p className="text-gray-500 mt-2">
                   Login to continue learning.
                 </p>
+
               </div>
 
-              {/* Email */}
+              {/* EMAIL */}
+
               <div>
+
                 <label className="block mb-2 font-medium text-gray-700">
                   Email
                 </label>
@@ -176,10 +272,13 @@ const Auth = () => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
                 />
+
               </div>
 
-              {/* Password */}
+              {/* PASSWORD */}
+
               <div>
+
                 <label className="block mb-2 font-medium text-gray-700">
                   Password
                 </label>
@@ -192,19 +291,24 @@ const Auth = () => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
                 />
+
               </div>
 
-              {/* Forgot Password */}
+              {/* FORGOT PASSWORD */}
+
               <div className="text-right">
+
                 <Link
                   to="/forgot-password"
                   className="text-sm text-purple-600 hover:underline"
                 >
                   Forgot Password?
                 </Link>
+
               </div>
 
-              {/* Login Button */}
+              {/* LOGIN BUTTON */}
+
               <button
                 type="submit"
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition"
@@ -212,7 +316,8 @@ const Auth = () => {
                 Login
               </button>
 
-              {/* Google Login */}
+              {/* GOOGLE */}
+
               <button
                 type="button"
                 className="w-full border border-gray-300 flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
@@ -224,11 +329,17 @@ const Auth = () => {
             </form>
           )}
 
-          {/* ================= SIGNUP FORM ================= */}
+          {/* ==========================================
+              REGISTER FORM
+          ========================================== */}
+
           {!isLogin && (
             <form onSubmit={handleRegister} className="space-y-5">
 
+              {/* CREATE ACCOUNT */}
+
               <div>
+
                 <h2 className="text-2xl font-bold text-gray-900">
                   Create Account
                 </h2>
@@ -236,10 +347,15 @@ const Auth = () => {
                 <p className="text-gray-500 mt-2">
                   Join us and start learning.
                 </p>
+
               </div>
 
-              {/* Full Name */}
+              {/* ==========================================
+                  FULL NAME
+              ========================================== */}
+
               <div>
+
                 <label className="block mb-2 font-medium text-gray-700">
                   Full Name
                 </label>
@@ -252,10 +368,15 @@ const Auth = () => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
                 />
+
               </div>
 
-              {/* Email */}
+              {/* ==========================================
+                  EMAIL
+              ========================================== */}
+
               <div>
+
                 <label className="block mb-2 font-medium text-gray-700">
                   Email
                 </label>
@@ -268,10 +389,186 @@ const Auth = () => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
                 />
+
               </div>
 
-              {/* Password */}
+              {/* ==========================================
+                  PHONE
+              ========================================== */}
+
               <div>
+
+                <label className="block mb-2 font-medium text-gray-700">
+                  Phone Number
+                </label>
+
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Enter your phone number"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                  required
+                />
+
+              </div>
+
+              {/* ==========================================
+                  STUDENT FIELDS
+              ========================================== */}
+
+              {registerRole === "student" && (
+                <>
+
+                  {/* EDUCATIONAL LEVEL */}
+
+                  <div>
+
+                    <label className="block mb-2 font-medium text-gray-700">
+                      Educational Level
+                    </label>
+
+                    <select
+                      value={educationalLevel}
+                      onChange={(e) => setEducationalLevel(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                      required
+                    >
+                      <option value="">
+                        Select educational level
+                      </option>
+
+                      <option value="SEE">
+                        SEE
+                      </option>
+
+                      <option value="+2">
+                        +2 Graduate
+                      </option>
+
+                      <option value="bachelor">
+                        Bachelor's Graduate
+                      </option>
+
+                      <option value="master">
+                        Master's Graduate
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                  {/* FACULTY */}
+
+                  <div>
+
+                    <label className="block mb-2 font-medium text-gray-700">
+                      Faculty / Course
+                    </label>
+
+                    <select
+                      value={faculty}
+                      onChange={(e) => setFaculty(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                      required
+                    >
+                      <option value="">
+                        Select faculty
+                      </option>
+
+                      <option value="UI/UX">
+                        UI/UX
+                      </option>
+
+                      <option value="Frontend Development">
+                        Frontend Development
+                      </option>
+
+                      <option value="Full Stack Development">
+                        Full Stack Development
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                </>
+              )}
+
+              {/* ==========================================
+                  EXPERT FIELDS
+              ========================================== */}
+
+              {registerRole === "expert" && (
+                <>
+
+                  {/* AREA OF EXPERTISE */}
+
+                  <div>
+
+                    <label className="block mb-2 font-medium text-gray-700">
+                      Area of Expertise
+                    </label>
+
+                    <input
+                      type="text"
+                      value={expertise}
+                      onChange={(e) => setExpertise(e.target.value)}
+                      placeholder="e.g. Frontend Development"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                      required
+                    />
+
+                  </div>
+
+                  {/* QUALIFICATION */}
+
+                  <div>
+
+                    <label className="block mb-2 font-medium text-gray-700">
+                      Qualification
+                    </label>
+
+                    <input
+                      type="text"
+                      value={qualification}
+                      onChange={(e) => setQualification(e.target.value)}
+                      placeholder="e.g. Bachelor's in Computer Science"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                      required
+                    />
+
+                  </div>
+
+                  {/* EXPERIENCE */}
+
+                  <div>
+
+                    <label className="block mb-2 font-medium text-gray-700">
+                      Years of Experience
+                    </label>
+
+                    <input
+                      type="number"
+                      min="0"
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                      placeholder="e.g. 5"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+                      required
+                    />
+
+                  </div>
+
+                </>
+              )}
+
+              {/* ==========================================
+                  PASSWORD
+              ========================================== */}
+
+              <div>
+
                 <label className="block mb-2 font-medium text-gray-700">
                   Password
                 </label>
@@ -284,10 +581,15 @@ const Auth = () => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
                 />
+
               </div>
 
-              {/* Confirm Password */}
+              {/* ==========================================
+                  CONFIRM PASSWORD
+              ========================================== */}
+
               <div>
+
                 <label className="block mb-2 font-medium text-gray-700">
                   Confirm Password
                 </label>
@@ -300,9 +602,13 @@ const Auth = () => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
                 />
+
               </div>
 
-              {/* Signup Button */}
+              {/* ==========================================
+                  CREATE ACCOUNT BUTTON
+              ========================================== */}
+
               <button
                 type="submit"
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition"
@@ -310,7 +616,8 @@ const Auth = () => {
                 Create Account
               </button>
 
-              {/* Google Signup */}
+              {/* GOOGLE */}
+
               <button
                 type="button"
                 className="w-full flex items-center justify-center gap-2 border border-gray-300 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition"
@@ -323,11 +630,9 @@ const Auth = () => {
           )}
 
         </div>
-
       </div>
     </div>
   );
 };
 
 export default Auth;
-

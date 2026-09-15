@@ -4,7 +4,7 @@ const httpLink = new HttpLink({
   uri: "http://localhost:3000/graphql",
   credentials: "include",
 });
-
+///// Create the auth middleware(authLink)
 const authLink = new ApolloLink((operation, forward) => {
   const token = localStorage.getItem("auth_token");
 
@@ -14,7 +14,12 @@ const authLink = new ApolloLink((operation, forward) => {
     },
   });
 
-  return forward(operation);
+  return f
+  
+  
+  
+  
+  orward(operation);
 });
 
 const client = new ApolloClient({

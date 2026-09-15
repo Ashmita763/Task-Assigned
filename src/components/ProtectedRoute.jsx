@@ -12,12 +12,14 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
 
   // Wait until authentication check is complete
   if (loading) {
-    return (
+    return (  
+    
+         
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>
       </div>
     );
-  }
+  }  
 
   // If user is not logged in, redirect to login
   if (!isAuthenticated) {
@@ -28,7 +30,7 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
         replace
       />
     );
-  }
+  }    
 
   // If the user's role is not allowed, redirect to dashboard
   if (

@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 
 /* =========================================================
@@ -388,12 +394,22 @@ const QUESTION_BANK = {
     ],
     [
       "Which browser API can store key-value data locally?",
-      ["localStorage", "browserStorageSQL", "localDatabaseCSS", "sessionCSS"],
+      [
+        "localStorage",
+        "browserStorageSQL",
+        "localDatabaseCSS",
+        "sessionCSS",
+      ],
       0,
     ],
     [
       "Which method selects the first matching element in the DOM?",
-      ["querySelector()", "selectFirst()", "getElement()", "findElement()"],
+      [
+        "querySelector()",
+        "selectFirst()",
+        "getElement()",
+        "findElement()",
+      ],
       0,
     ],
     [
@@ -633,12 +649,22 @@ const QUESTION_BANK = {
     ],
     [
       "Which property controls horizontal distribution in a flex container?",
-      ["justify-content", "align-items", "flex-space", "horizontal-align"],
+      [
+        "justify-content",
+        "align-items",
+        "flex-space",
+        "horizontal-align",
+      ],
       0,
     ],
     [
       "Which property controls cross-axis alignment in a flex container?",
-      ["align-items", "justify-items", "cross-align", "align-content-only"],
+      [
+        "align-items",
+        "justify-items",
+        "cross-align",
+        "align-content-only",
+      ],
       0,
     ],
     [
@@ -709,12 +735,11 @@ const removeStorage = (key) => {
 };
 
 /* =========================================================
-   TIME FORMAT
+   FORMATTERS
 ========================================================= */
 
 const formatTime = (seconds) => {
   const safeSeconds = Math.max(0, seconds);
-
   const minutes = Math.floor(safeSeconds / 60);
   const remainingSeconds = safeSeconds % 60;
 
@@ -724,7 +749,9 @@ const formatTime = (seconds) => {
 };
 
 const formatDateTime = (timestamp) => {
-  if (!timestamp) return "";
+  if (!timestamp) {
+    return "";
+  }
 
   return new Date(timestamp).toLocaleString();
 };
@@ -736,9 +763,9 @@ const formatDateTime = (timestamp) => {
 const Assessment = () => {
   const navigate = useNavigate();
 
-  /* -------------------------------------------------------
-     INITIAL STORED DATA
-  ------------------------------------------------------- */
+  /* =======================================================
+     INITIAL STORAGE
+  ======================================================= */
 
   const [initialSession] = useState(() =>
     readStorage(STORAGE_KEYS.SESSION, null)
@@ -762,17 +789,13 @@ const Assessment = () => {
     initialSession.endAt &&
     initialSession.endAt > Date.now();
 
-  /* -------------------------------------------------------
-     STAGE
-  ------------------------------------------------------- */
+  /* =======================================================
+     MAIN STATE
+  ======================================================= */
 
   const [stage, setStage] = useState(
     sessionIsActive ? "assessment" : "category"
   );
-
-  /* -------------------------------------------------------
-     CATEGORY / TOPIC
-  ------------------------------------------------------- */
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     sessionIsActive ? initialSession.categoryId : null
@@ -781,22 +804,6 @@ const Assessment = () => {
   const [selectedTopicId, setSelectedTopicId] = useState(
     sessionIsActive ? initialSession.topicId : null
   );
-
-  /* -------------------------------------------------------
-     DEVICE STATES
-  ------------------------------------------------------- */
-
-  const [cameraStatus, setCameraStatus] = useState("pending");
-  const [microphoneStatus, setMicrophoneStatus] = useState("pending");
-  const [screenStatus, setScreenStatus] = useState("pending");
-  const [browserStatus, setBrowserStatus] = useState("pending");
-  const [connectionStatus, setConnectionStatus] = useState("pending");
-
-  const [cameraStream, setCameraStream] = useState(null);
-
-  /* -------------------------------------------------------
-     ASSESSMENT STATE
-  ------------------------------------------------------- */
 
   const [answers, setAnswers] = useState(
     sessionIsActive ? initialSession.answers || {} : {}
@@ -819,10 +826,6 @@ const Assessment = () => {
       : ASSESSMENT_DURATION
   );
 
-  /* -------------------------------------------------------
-     WARNINGS / RESULT
-  ------------------------------------------------------- */
-
   const [warnings, setWarnings] = useState(
     sessionIsActive ? initialSession.warnings || 0 : 0
   );
@@ -831,28 +834,43 @@ const Assessment = () => {
 
   const [result, setResult] = useState(null);
 
-  /* -------------------------------------------------------
-     STORED USER DATA
-  ------------------------------------------------------- */
-
-  const [passedTopics, setPassedTopics] = useState(initialPassedTopics);
+  const [passedTopics, setPassedTopics] = useState(
+    initialPassedTopics
+  );
 
   const [lockouts, setLockouts] = useState(initialLockouts);
 
   const [attempts, setAttempts] = useState(initialAttempts);
 
-  /* -------------------------------------------------------
+  /* =======================================================
+     DEVICE STATE
+  ======================================================= */
+
+  const [cameraStatus, setCameraStatus] = useState("pending");
+  const [microphoneStatus, setMicrophoneStatus] =
+    useState("pending");
+  const [screenStatus, setScreenStatus] = useState("pending");
+  const [browserStatus, setBrowserStatus] = useState("pending");
+  const [connectionStatus, setConnectionStatus] =
+    useState("pending");
+
+  const [cameraStream, setCameraStream] = useState(null);
+
+  /* =======================================================
      REFS
-  ------------------------------------------------------- */
+  ======================================================= */
 
   const videoRef = useRef(null);
-
   const cameraStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
 
   const stageRef = useRef(stage);
   const warningsRef = useRef(warnings);
   const isFinishedRef = useRef(false);
+
+  /* =======================================================
+     REF SYNCHRONIZATION
+  ======================================================= */
 
   useEffect(() => {
     stageRef.current = stage;
@@ -862,9 +880,9 @@ const Assessment = () => {
     warningsRef.current = warnings;
   }, [warnings]);
 
-  /* -------------------------------------------------------
+  /* =======================================================
      SELECTED CATEGORY / TOPIC
-  ------------------------------------------------------- */
+  ======================================================= */
 
   const selectedCategory = useMemo(
     () =>
@@ -886,9 +904,9 @@ const Assessment = () => {
     ? QUESTION_BANK[selectedTopicId] || []
     : [];
 
-  /* -------------------------------------------------------
+  /* =======================================================
      TOPIC STATUS
-  ------------------------------------------------------- */
+  ======================================================= */
 
   const topicPassed = selectedTopicId
     ? Boolean(passedTopics[selectedTopicId])
@@ -899,45 +917,56 @@ const Assessment = () => {
     : null;
 
   const topicIsLocked =
-    topicLockoutUntil && topicLockoutUntil > Date.now();
+    topicLockoutUntil &&
+    topicLockoutUntil > Date.now();
 
-  /* -------------------------------------------------------
+  /* =======================================================
      STOP MEDIA
-  ------------------------------------------------------- */
+  ======================================================= */
 
-  const stopMedia = () => {
+  const stopMedia = useCallback(() => {
     if (cameraStreamRef.current) {
-      cameraStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-      });
+      cameraStreamRef.current
+        .getTracks()
+        .forEach((track) => track.stop());
 
       cameraStreamRef.current = null;
     }
 
     if (screenStreamRef.current) {
-      screenStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-      });
+      screenStreamRef.current
+        .getTracks()
+        .forEach((track) => track.stop());
 
       screenStreamRef.current = null;
     }
 
     setCameraStream(null);
-  };
+  }, []);
 
-  /* -------------------------------------------------------
-     CLEANUP MEDIA
-  ------------------------------------------------------- */
+  /* =======================================================
+     MEDIA CLEANUP
+  ======================================================= */
 
   useEffect(() => {
     return () => {
-      stopMedia();
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current
+          .getTracks()
+          .forEach((track) => track.stop());
+      }
+
+      if (screenStreamRef.current) {
+        screenStreamRef.current
+          .getTracks()
+          .forEach((track) => track.stop());
+      }
     };
   }, []);
 
-  /* -------------------------------------------------------
+  /* =======================================================
      CAMERA PREVIEW
-  ------------------------------------------------------- */
+  ======================================================= */
 
   useEffect(() => {
     if (!videoRef.current || !cameraStream) {
@@ -946,115 +975,147 @@ const Assessment = () => {
 
     videoRef.current.srcObject = cameraStream;
 
-    videoRef.current
-      .play()
-      .catch(() => {
-        // Browser may require user interaction.
-      });
+    videoRef.current.play().catch(() => {});
   }, [cameraStream]);
 
-  /* =========================================================
-     VIOLATION HANDLING
-  ========================================================= */
+  /* =======================================================
+     DISQUALIFICATION
+  ======================================================= */
 
-  const disqualifyAssessment = (reason) => {
-    if (isFinishedRef.current) {
-      return;
-    }
+  const disqualifyAssessment = useCallback(
+    (reason) => {
+      if (isFinishedRef.current) {
+        return;
+      }
 
-    isFinishedRef.current = true;
+      isFinishedRef.current = true;
 
-    const topicId = selectedTopicId;
+      const topicId = selectedTopicId;
 
-    const currentAttempts = attempts[topicId] || 0;
-    const nextAttempt = currentAttempts + 1;
+      if (!topicId) {
+        return;
+      }
 
-    const retryAt = Date.now() + LOCKOUT_DURATION;
+      const currentAttempts = attempts[topicId] || 0;
+      const nextAttempt = currentAttempts + 1;
 
-    const updatedAttempts = {
-      ...attempts,
-      [topicId]: nextAttempt,
-    };
+      const retryAt = Date.now() + LOCKOUT_DURATION;
 
-    const updatedLockouts = {
-      ...lockouts,
-      [topicId]: retryAt,
-    };
+      const updatedAttempts = {
+        ...attempts,
+        [topicId]: nextAttempt,
+      };
 
-    setAttempts(updatedAttempts);
-    setLockouts(updatedLockouts);
+      const updatedLockouts = {
+        ...lockouts,
+        [topicId]: retryAt,
+      };
 
-    writeStorage(STORAGE_KEYS.ATTEMPTS, updatedAttempts);
-    writeStorage(STORAGE_KEYS.LOCKOUTS, updatedLockouts);
+      setAttempts(updatedAttempts);
+      setLockouts(updatedLockouts);
 
-    const history = readStorage(STORAGE_KEYS.HISTORY, []);
+      writeStorage(
+        STORAGE_KEYS.ATTEMPTS,
+        updatedAttempts
+      );
 
-    history.push({
-      categoryId: selectedCategoryId,
-      topicId,
-      score: 0,
-      status: "disqualified",
-      warnings: MAX_WARNINGS,
-      attempts: nextAttempt,
-      completedAt: Date.now(),
-      reason,
-    });
+      writeStorage(
+        STORAGE_KEYS.LOCKOUTS,
+        updatedLockouts
+      );
 
-    writeStorage(STORAGE_KEYS.HISTORY, history);
+      const history = readStorage(
+        STORAGE_KEYS.HISTORY,
+        []
+      );
 
-    removeStorage(STORAGE_KEYS.SESSION);
+      history.push({
+        categoryId: selectedCategoryId,
+        topicId,
+        score: 0,
+        correct: 0,
+        total: questions.length,
+        status: "disqualified",
+        warnings: MAX_WARNINGS,
+        attempts: nextAttempt,
+        completedAt: Date.now(),
+        reason,
+      });
 
-    setResult({
-      status: "disqualified",
-      score: 0,
-      correct: 0,
-      total: questions.length,
-      warnings: MAX_WARNINGS,
-      attempts: nextAttempt,
-      retryAt,
-      reason,
-    });
+      writeStorage(
+        STORAGE_KEYS.HISTORY,
+        history
+      );
 
-    stopMedia();
+      removeStorage(STORAGE_KEYS.SESSION);
 
-    setStage("result");
-  };
+      setResult({
+        status: "disqualified",
+        score: 0,
+        correct: 0,
+        total: questions.length,
+        warnings: MAX_WARNINGS,
+        attempts: nextAttempt,
+        retryAt,
+        reason,
+      });
 
-  const handleViolation = (reason) => {
-    if (
-      stageRef.current !== "assessment" ||
-      isFinishedRef.current
-    ) {
-      return;
-    }
+      stopMedia();
+      setStage("result");
+    },
+    [
+      attempts,
+      lockouts,
+      questions.length,
+      selectedCategoryId,
+      selectedTopicId,
+      stopMedia,
+    ]
+  );
 
-    const nextWarnings = Math.min(
-      warningsRef.current + 1,
-      MAX_WARNINGS
-    );
+  /* =======================================================
+     VIOLATION HANDLER
+  ======================================================= */
 
-    warningsRef.current = nextWarnings;
+  const handleViolation = useCallback(
+    (reason) => {
+      if (
+        stageRef.current !== "assessment" ||
+        isFinishedRef.current
+      ) {
+        return;
+      }
 
-    setWarnings(nextWarnings);
-    setWarningReason(reason);
+      const nextWarnings = Math.min(
+        warningsRef.current + 1,
+        MAX_WARNINGS
+      );
 
-    if (nextWarnings >= MAX_WARNINGS) {
-      disqualifyAssessment(reason);
-    }
-  };
+      warningsRef.current = nextWarnings;
+      setWarnings(nextWarnings);
+      setWarningReason(reason);
 
-  /* =========================================================
+      if (nextWarnings >= MAX_WARNINGS) {
+        disqualifyAssessment(reason);
+      }
+    },
+    [disqualifyAssessment]
+  );
+
+  /* =======================================================
      FINISH ASSESSMENT
-  ========================================================= */
+  ======================================================= */
 
-  const finishAssessment = () => {
+  const finishAssessment = useCallback(() => {
     if (isFinishedRef.current) {
       return;
     }
 
-    isFinishedRef.current = true;
+    if (!selectedTopicId || questions.length === 0) {
+      return;
+    }
 
-    const totalQuestions = questions.length;
+    isFinishedRef.current = true;
 
     let correct = 0;
 
@@ -1064,14 +1125,17 @@ const Assessment = () => {
       }
     });
 
-    const score =
-      totalQuestions > 0
-        ? Math.round((correct / totalQuestions) * 100)
-        : 0;
+    const totalQuestions = questions.length;
+
+    const score = Math.round(
+      (correct / totalQuestions) * 100
+    );
 
     const passed = score >= PASSING_PERCENTAGE;
 
-    const currentAttempts = attempts[selectedTopicId] || 0;
+    const currentAttempts =
+      attempts[selectedTopicId] || 0;
+
     const nextAttempt = currentAttempts + 1;
 
     const updatedAttempts = {
@@ -1080,7 +1144,11 @@ const Assessment = () => {
     };
 
     setAttempts(updatedAttempts);
-    writeStorage(STORAGE_KEYS.ATTEMPTS, updatedAttempts);
+
+    writeStorage(
+      STORAGE_KEYS.ATTEMPTS,
+      updatedAttempts
+    );
 
     let retryAt = null;
 
@@ -1112,7 +1180,10 @@ const Assessment = () => {
       );
     }
 
-    const history = readStorage(STORAGE_KEYS.HISTORY, []);
+    const history = readStorage(
+      STORAGE_KEYS.HISTORY,
+      []
+    );
 
     history.push({
       categoryId: selectedCategoryId,
@@ -1126,7 +1197,10 @@ const Assessment = () => {
       completedAt: Date.now(),
     });
 
-    writeStorage(STORAGE_KEYS.HISTORY, history);
+    writeStorage(
+      STORAGE_KEYS.HISTORY,
+      history
+    );
 
     removeStorage(STORAGE_KEYS.SESSION);
 
@@ -1141,13 +1215,22 @@ const Assessment = () => {
     });
 
     stopMedia();
-
     setStage("result");
-  };
+  }, [
+    answers,
+    attempts,
+    lockouts,
+    passedTopics,
+    questions,
+    selectedCategoryId,
+    selectedTopicId,
+    stopMedia,
+    warnings,
+  ]);
 
-  /* =========================================================
+  /* =======================================================
      TIMER
-  ========================================================= */
+  ======================================================= */
 
   useEffect(() => {
     if (
@@ -1176,14 +1259,16 @@ const Assessment = () => {
 
     const timer = setInterval(tick, 1000);
 
-    return () => {
-      clearInterval(timer);
-    };
-  }, [stage, assessmentEndAt]);
+    return () => clearInterval(timer);
+  }, [
+    stage,
+    assessmentEndAt,
+    finishAssessment,
+  ]);
 
-  /* =========================================================
-     PERSIST ACTIVE ASSESSMENT
-  ========================================================= */
+  /* =======================================================
+     PERSIST ACTIVE SESSION
+  ======================================================= */
 
   useEffect(() => {
     if (
@@ -1213,9 +1298,9 @@ const Assessment = () => {
     assessmentEndAt,
   ]);
 
-  /* =========================================================
+  /* =======================================================
      INTERNET MONITORING
-  ========================================================= */
+  ======================================================= */
 
   useEffect(() => {
     const handleOffline = () => {
@@ -1230,18 +1315,32 @@ const Assessment = () => {
       setConnectionStatus("passed");
     };
 
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
 
     return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
-    };
-  }, []);
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
 
-  /* =========================================================
-     TAB VISIBILITY MONITORING
-  ========================================================= */
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+    };
+  }, [handleViolation]);
+
+  /* =======================================================
+     TAB MONITORING
+  ======================================================= */
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -1266,11 +1365,11 @@ const Assessment = () => {
         handleVisibility
       );
     };
-  }, []);
+  }, [handleViolation]);
 
-  /* =========================================================
+  /* =======================================================
      BEFORE UNLOAD
-  ========================================================= */
+  ======================================================= */
 
   useEffect(() => {
     if (stage !== "assessment") {
@@ -1295,23 +1394,25 @@ const Assessment = () => {
     };
   }, [stage]);
 
-  /* =========================================================
+  /* =======================================================
      BROWSER CHECK
-  ========================================================= */
+  ======================================================= */
 
   const checkBrowser = () => {
     const isChrome =
       /Chrome/.test(navigator.userAgent) &&
       !/Edg|OPR/.test(navigator.userAgent);
 
-    setBrowserStatus(isChrome ? "passed" : "failed");
+    setBrowserStatus(
+      isChrome ? "passed" : "failed"
+    );
 
     return isChrome;
   };
 
-  /* =========================================================
+  /* =======================================================
      DEVICE CHECK
-  ========================================================= */
+  ======================================================= */
 
   const runDeviceCheck = async () => {
     stopMedia();
@@ -1324,13 +1425,13 @@ const Assessment = () => {
     setBrowserStatus("checking");
     setConnectionStatus("checking");
 
-    const browserPassed = checkBrowser();
+    checkBrowser();
 
     setConnectionStatus(
       navigator.onLine ? "passed" : "failed"
     );
 
-    /* ---------------- CAMERA + MICROPHONE ---------------- */
+    /* CAMERA + MICROPHONE */
 
     try {
       const stream =
@@ -1340,18 +1441,24 @@ const Assessment = () => {
         });
 
       cameraStreamRef.current = stream;
-
       setCameraStream(stream);
 
-      const videoTracks = stream.getVideoTracks();
-      const audioTracks = stream.getAudioTracks();
+      const videoTracks =
+        stream.getVideoTracks();
+
+      const audioTracks =
+        stream.getAudioTracks();
 
       setCameraStatus(
-        videoTracks.length > 0 ? "passed" : "failed"
+        videoTracks.length > 0
+          ? "passed"
+          : "failed"
       );
 
       setMicrophoneStatus(
-        audioTracks.length > 0 ? "passed" : "failed"
+        audioTracks.length > 0
+          ? "passed"
+          : "failed"
       );
 
       videoTracks.forEach((track) => {
@@ -1374,10 +1481,12 @@ const Assessment = () => {
       setMicrophoneStatus("failed");
     }
 
-    /* ---------------- SCREEN SHARING ---------------- */
+    /* SCREEN SHARING */
 
     try {
-      if (!navigator.mediaDevices?.getDisplayMedia) {
+      if (
+        !navigator.mediaDevices?.getDisplayMedia
+      ) {
         setScreenStatus("failed");
       } else {
         const screenStream =
@@ -1385,7 +1494,8 @@ const Assessment = () => {
             video: true,
           });
 
-        screenStreamRef.current = screenStream;
+        screenStreamRef.current =
+          screenStream;
 
         setScreenStatus("passed");
 
@@ -1403,18 +1513,11 @@ const Assessment = () => {
     } catch {
       setScreenStatus("failed");
     }
-
-    /*
-      Browser and connection were already checked.
-      We intentionally keep this function frontend-only.
-    */
-
-    return browserPassed;
   };
 
-  /* =========================================================
+  /* =======================================================
      START ASSESSMENT
-  ========================================================= */
+  ======================================================= */
 
   const startAssessment = () => {
     const deviceChecksPassed =
@@ -1431,12 +1534,15 @@ const Assessment = () => {
     isFinishedRef.current = false;
 
     const endAt =
-      Date.now() + ASSESSMENT_DURATION * 1000;
+      Date.now() +
+      ASSESSMENT_DURATION * 1000;
 
     setAnswers({});
     setCurrentQuestion(0);
+
     setWarnings(0);
     warningsRef.current = 0;
+
     setWarningReason("");
 
     setAssessmentEndAt(endAt);
@@ -1445,9 +1551,9 @@ const Assessment = () => {
     setStage("assessment");
   };
 
-  /* =========================================================
-     SELECT CATEGORY
-  ========================================================= */
+  /* =======================================================
+     CATEGORY / TOPIC SELECTION
+  ======================================================= */
 
   const selectCategory = (categoryId) => {
     setSelectedCategoryId(categoryId);
@@ -1455,18 +1561,10 @@ const Assessment = () => {
     setStage("topic");
   };
 
-  /* =========================================================
-     SELECT TOPIC
-  ========================================================= */
-
   const selectTopic = (topicId) => {
     setSelectedTopicId(topicId);
     setWarningReason("");
   };
-
-  /* =========================================================
-     START SELECTED TOPIC
-  ========================================================= */
 
   const continueToInstructions = () => {
     if (!selectedTopicId) {
@@ -1486,16 +1584,17 @@ const Assessment = () => {
     setStage("instructions");
   };
 
-  /* =========================================================
-     ANSWER QUESTION
-  ========================================================= */
+  /* =======================================================
+     ANSWERS
+  ======================================================= */
 
   const selectAnswer = (optionIndex) => {
     if (isFinishedRef.current) {
       return;
     }
 
-    const question = questions[currentQuestion];
+    const question =
+      questions[currentQuestion];
 
     if (!question) {
       return;
@@ -1507,12 +1606,15 @@ const Assessment = () => {
     }));
   };
 
-  /* =========================================================
+  /* =======================================================
      QUESTION NAVIGATION
-  ========================================================= */
+  ======================================================= */
 
   const goToNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
+    if (
+      currentQuestion <
+      questions.length - 1
+    ) {
       setCurrentQuestion(
         (previous) => previous + 1
       );
@@ -1527,12 +1629,14 @@ const Assessment = () => {
     }
   };
 
-  /* =========================================================
-     GO BACK
-  ========================================================= */
+  /* =======================================================
+     NAVIGATION
+  ======================================================= */
 
   const goToCategories = () => {
     stopMedia();
+
+    removeStorage(STORAGE_KEYS.SESSION);
 
     setSelectedCategoryId(null);
     setSelectedTopicId(null);
@@ -1543,14 +1647,16 @@ const Assessment = () => {
   const goToTopics = () => {
     stopMedia();
 
+    removeStorage(STORAGE_KEYS.SESSION);
+
     setSelectedTopicId(null);
 
     setStage("topic");
   };
 
-  /* =========================================================
-     DEVICE STATUS HELPER
-  ========================================================= */
+  /* =======================================================
+     STATUS TEXT
+  ======================================================= */
 
   const getStatusText = (status) => {
     switch (status) {
@@ -1568,9 +1674,9 @@ const Assessment = () => {
     }
   };
 
-  /* =========================================================
+  /* =======================================================
      COMMON STYLES
-  ========================================================= */
+  ======================================================= */
 
   const pageClass =
     "min-h-screen bg-white text-gray-900";
@@ -1584,9 +1690,9 @@ const Assessment = () => {
   const outlineButton =
     "border border-purple-700 text-purple-700 px-5 py-3 rounded-lg font-semibold hover:bg-purple-50 transition disabled:opacity-40 disabled:cursor-not-allowed";
 
-  /* =========================================================
+  /* =======================================================
      CATEGORY STAGE
-  ========================================================= */
+  ======================================================= */
 
   if (stage === "category") {
     return (
@@ -1594,7 +1700,9 @@ const Assessment = () => {
         <div className={containerClass}>
           <div className="py-10">
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() =>
+                navigate("/dashboard")
+              }
               className="text-purple-700 font-medium mb-8"
             >
               ← Back to Dashboard
@@ -1610,9 +1718,10 @@ const Assessment = () => {
               </h1>
 
               <p className="text-gray-600 max-w-2xl">
-                Select a category to see its available topics.
-                Each topic has its own free assessment and
-                course access is unlocked only after passing.
+                Select a category to see its available
+                topics. Each topic has its own free
+                assessment and course access is unlocked
+                only after passing.
               </p>
             </div>
 
@@ -1655,9 +1764,9 @@ const Assessment = () => {
     );
   }
 
-  /* =========================================================
+  /* =======================================================
      TOPIC STAGE
-  ========================================================= */
+  ======================================================= */
 
   if (stage === "topic") {
     return (
@@ -1687,109 +1796,121 @@ const Assessment = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {selectedCategory?.topics.map((topic) => {
-                const passed = Boolean(
-                  passedTopics[topic.id]
-                );
+              {selectedCategory?.topics.map(
+                (topic) => {
+                  const passed = Boolean(
+                    passedTopics[topic.id]
+                  );
 
-                const lockedUntil =
-                  lockouts[topic.id];
+                  const lockedUntil =
+                    lockouts[topic.id];
 
-                const currentlyLocked =
-                  lockedUntil &&
-                  lockedUntil > Date.now();
+                  const currentlyLocked =
+                    lockedUntil &&
+                    lockedUntil > Date.now();
 
-                const topicAttempts =
-                  attempts[topic.id] || 0;
+                  const topicAttempts =
+                    attempts[topic.id] || 0;
 
-                return (
-                  <div
-                    key={topic.id}
-                    className={`border rounded-2xl p-6 transition ${
-                      selectedTopicId === topic.id
-                        ? "border-purple-700 bg-purple-50"
-                        : "border-gray-200"
-                    }`}
-                  >
-                    <button
-                      onClick={() =>
-                        selectTopic(topic.id)
-                      }
-                      className="text-left w-full"
+                  return (
+                    <div
+                      key={topic.id}
+                      className={`border rounded-2xl p-6 transition ${
+                        selectedTopicId ===
+                        topic.id
+                          ? "border-purple-700 bg-purple-50"
+                          : "border-gray-200"
+                      }`}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h2 className="text-xl font-bold mb-2">
-                            {topic.name}
-                          </h2>
+                      <button
+                        onClick={() =>
+                          selectTopic(topic.id)
+                        }
+                        className="text-left w-full"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h2 className="text-xl font-bold mb-2">
+                              {topic.name}
+                            </h2>
 
-                          <p className="text-gray-600 text-sm">
-                            {topic.description}
+                            <p className="text-gray-600 text-sm">
+                              {topic.description}
+                            </p>
+                          </div>
+
+                          <span className="text-purple-700 font-bold">
+                            {passed
+                              ? "Passed"
+                              : "Free"}
+                          </span>
+                        </div>
+                      </button>
+
+                      <div className="grid grid-cols-3 gap-3 mt-6 text-sm">
+                        <div className="bg-white border border-gray-200 rounded-lg p-3">
+                          <p className="text-gray-500">
+                            Questions
+                          </p>
+
+                          <p className="font-bold mt-1">
+                            20
                           </p>
                         </div>
 
-                        <span className="text-purple-700 font-bold">
-                          {passed ? "Passed" : "Free"}
-                        </span>
-                      </div>
-                    </button>
+                        <div className="bg-white border border-gray-200 rounded-lg p-3">
+                          <p className="text-gray-500">
+                            Duration
+                          </p>
 
-                    <div className="grid grid-cols-3 gap-3 mt-6 text-sm">
-                      <div className="bg-white border border-gray-200 rounded-lg p-3">
-                        <p className="text-gray-500">
-                          Questions
-                        </p>
-                        <p className="font-bold mt-1">
-                          20
-                        </p>
-                      </div>
+                          <p className="font-bold mt-1">
+                            30 min
+                          </p>
+                        </div>
 
-                      <div className="bg-white border border-gray-200 rounded-lg p-3">
-                        <p className="text-gray-500">
-                          Duration
-                        </p>
-                        <p className="font-bold mt-1">
-                          30 min
-                        </p>
+                        <div className="bg-white border border-gray-200 rounded-lg p-3">
+                          <p className="text-gray-500">
+                            Pass
+                          </p>
+
+                          <p className="font-bold mt-1">
+                            80%
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="bg-white border border-gray-200 rounded-lg p-3">
-                        <p className="text-gray-500">
-                          Pass
-                        </p>
-                        <p className="font-bold mt-1">
-                          80%
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5">
-                      {passed && (
-                        <p className="text-sm text-purple-700 font-semibold">
-                          Course unlocked for this topic.
-                        </p>
-                      )}
-
-                      {!passed &&
-                        currentlyLocked && (
-                          <p className="text-sm text-gray-600">
-                            Retry available after{" "}
-                            {formatDateTime(lockedUntil)}.
+                      <div className="mt-5">
+                        {passed && (
+                          <p className="text-sm text-purple-700 font-semibold">
+                            Course unlocked for this
+                            topic.
                           </p>
                         )}
 
-                      {!passed &&
-                        !currentlyLocked &&
-                        topicAttempts > 0 && (
-                          <p className="text-sm text-gray-600">
-                            Previous attempts:{" "}
-                            {topicAttempts}
-                          </p>
-                        )}
+                        {!passed &&
+                          currentlyLocked && (
+                            <p className="text-sm text-gray-600">
+                              Retry available after{" "}
+                              {formatDateTime(
+                                lockedUntil
+                              )}
+                              .
+                            </p>
+                          )}
+
+                        {!passed &&
+                          !currentlyLocked &&
+                          topicAttempts > 0 && (
+                            <p className="text-sm text-gray-600">
+                              Previous attempts:{" "}
+                              {topicAttempts}
+                            </p>
+                          )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
             </div>
 
             {selectedTopic && (
@@ -1805,8 +1926,9 @@ const Assessment = () => {
                 {topicPassed ? (
                   <div>
                     <p className="text-purple-700 font-semibold mb-4">
-                      You have already passed this assessment.
-                      The related course is unlocked.
+                      You have already passed this
+                      assessment. The related course is
+                      unlocked.
                     </p>
 
                     <button
@@ -1821,15 +1943,17 @@ const Assessment = () => {
                 ) : topicIsLocked ? (
                   <div>
                     <p className="text-gray-700 mb-4">
-                      This assessment is temporarily locked
-                      because the previous attempt did not
-                      meet the required score or was
-                      disqualified.
+                      This assessment is temporarily
+                      locked because the previous attempt
+                      did not meet the required score or
+                      was disqualified.
                     </p>
 
                     <p className="font-semibold mb-4">
                       Retry after:{" "}
-                      {formatDateTime(topicLockoutUntil)}
+                      {formatDateTime(
+                        topicLockoutUntil
+                      )}
                     </p>
 
                     <button
@@ -1841,7 +1965,9 @@ const Assessment = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={continueToInstructions}
+                    onClick={
+                      continueToInstructions
+                    }
                     className={purpleButton}
                   >
                     Start Free Assessment
@@ -1855,9 +1981,9 @@ const Assessment = () => {
     );
   }
 
-  /* =========================================================
+  /* =======================================================
      INSTRUCTIONS STAGE
-  ========================================================= */
+  ======================================================= */
 
   if (stage === "instructions") {
     return (
@@ -1890,6 +2016,7 @@ const Assessment = () => {
                   <p className="text-gray-500 text-sm">
                     Questions
                   </p>
+
                   <p className="text-xl font-bold mt-1">
                     20 MCQs
                   </p>
@@ -1899,6 +2026,7 @@ const Assessment = () => {
                   <p className="text-gray-500 text-sm">
                     Time
                   </p>
+
                   <p className="text-xl font-bold mt-1">
                     30 minutes
                   </p>
@@ -1908,6 +2036,7 @@ const Assessment = () => {
                   <p className="text-gray-500 text-sm">
                     Passing score
                   </p>
+
                   <p className="text-xl font-bold mt-1">
                     80%
                   </p>
@@ -1919,6 +2048,7 @@ const Assessment = () => {
                   <p className="font-semibold mb-1">
                     1. Camera and microphone
                   </p>
+
                   <p className="text-gray-600 text-sm">
                     You must allow camera and microphone
                     access during the assessment.
@@ -1929,6 +2059,7 @@ const Assessment = () => {
                   <p className="font-semibold mb-1">
                     2. Screen sharing
                   </p>
+
                   <p className="text-gray-600 text-sm">
                     Your screen must remain shared during
                     the assessment.
@@ -1939,6 +2070,7 @@ const Assessment = () => {
                   <p className="font-semibold mb-1">
                     3. Warnings
                   </p>
+
                   <p className="text-gray-600 text-sm">
                     You can receive up to 3 assessment
                     warnings. The third warning will
@@ -1950,6 +2082,7 @@ const Assessment = () => {
                   <p className="font-semibold mb-1">
                     4. Course access
                   </p>
+
                   <p className="text-gray-600 text-sm">
                     You must score at least 80% to unlock
                     the course related to this topic.
@@ -1960,6 +2093,7 @@ const Assessment = () => {
                   <p className="font-semibold mb-1">
                     5. Failed assessment
                   </p>
+
                   <p className="text-gray-600 text-sm">
                     If you fail, the related course remains
                     locked and the assessment will be locked
@@ -1981,9 +2115,9 @@ const Assessment = () => {
     );
   }
 
-  /* =========================================================
-     DEVICE CHECK STAGE
-  ========================================================= */
+  /* =======================================================
+     DEVICE CHECK
+  ======================================================= */
 
   if (stage === "device-check") {
     const allDeviceChecksPassed =
@@ -2046,6 +2180,8 @@ const Assessment = () => {
                           className={
                             status === "passed"
                               ? "text-purple-700 font-semibold"
+                              : status === "failed"
+                              ? "text-red-600 font-semibold"
                               : "text-gray-500"
                           }
                         >
@@ -2090,7 +2226,9 @@ const Assessment = () => {
 
                 <button
                   onClick={startAssessment}
-                  disabled={!allDeviceChecksPassed}
+                  disabled={
+                    !allDeviceChecksPassed
+                  }
                   className={purpleButton}
                 >
                   Start Assessment
@@ -2110,12 +2248,13 @@ const Assessment = () => {
     );
   }
 
-  /* =========================================================
-     ASSESSMENT STAGE
-  ========================================================= */
+  /* =======================================================
+     ASSESSMENT
+  ======================================================= */
 
   if (stage === "assessment") {
-    const question = questions[currentQuestion];
+    const question =
+      questions[currentQuestion];
 
     const answeredCount =
       Object.keys(answers).length;
@@ -2131,8 +2270,6 @@ const Assessment = () => {
       <div className={pageClass}>
         <div className={containerClass}>
           <div className="py-6">
-            {/* HEADER */}
-
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
               <div>
                 <p className="text-purple-700 font-semibold text-sm">
@@ -2151,7 +2288,8 @@ const Assessment = () => {
                   </p>
 
                   <p className="font-bold">
-                    {answeredCount}/{questions.length}
+                    {answeredCount}/
+                    {questions.length}
                   </p>
                 </div>
 
@@ -2177,8 +2315,6 @@ const Assessment = () => {
               </div>
             </div>
 
-            {/* PROGRESS */}
-
             <div className="h-2 bg-gray-100 rounded-full mb-6 overflow-hidden">
               <div
                 className="h-full bg-purple-700 transition-all"
@@ -2187,8 +2323,6 @@ const Assessment = () => {
                 }}
               />
             </div>
-
-            {/* WARNING */}
 
             {warningReason && (
               <div className="border border-purple-200 bg-purple-50 rounded-xl p-4 mb-6">
@@ -2201,19 +2335,19 @@ const Assessment = () => {
                 </p>
 
                 <p className="text-gray-700 text-sm mt-1">
-                  Warnings: {warnings}/{MAX_WARNINGS}
+                  Warnings: {warnings}/
+                  {MAX_WARNINGS}
                 </p>
               </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* QUESTION */}
-
               <div className="lg:col-span-3">
                 <div className="border border-gray-200 rounded-2xl p-6 sm:p-8">
                   <div className="flex items-center justify-between mb-6">
                     <p className="text-sm text-gray-500">
-                      Question {currentQuestion + 1} of{" "}
+                      Question{" "}
+                      {currentQuestion + 1} of{" "}
                       {questions.length}
                     </p>
 
@@ -2270,8 +2404,12 @@ const Assessment = () => {
 
                   <div className="flex flex-col sm:flex-row justify-between gap-3 mt-8">
                     <button
-                      onClick={goToPreviousQuestion}
-                      disabled={currentQuestion === 0}
+                      onClick={
+                        goToPreviousQuestion
+                      }
+                      disabled={
+                        currentQuestion === 0
+                      }
                       className={outlineButton}
                     >
                       ← Previous
@@ -2280,14 +2418,18 @@ const Assessment = () => {
                     {currentQuestion ===
                     questions.length - 1 ? (
                       <button
-                        onClick={finishAssessment}
+                        onClick={
+                          finishAssessment
+                        }
                         className={purpleButton}
                       >
                         Submit Assessment
                       </button>
                     ) : (
                       <button
-                        onClick={goToNextQuestion}
+                        onClick={
+                          goToNextQuestion
+                        }
                         className={purpleButton}
                       >
                         Next →
@@ -2296,8 +2438,6 @@ const Assessment = () => {
                   </div>
                 </div>
               </div>
-
-              {/* SIDEBAR */}
 
               <div className="space-y-5">
                 <div className="border border-gray-200 rounded-2xl p-5">
@@ -2313,7 +2453,8 @@ const Assessment = () => {
                           undefined;
 
                         const current =
-                          currentQuestion === index;
+                          currentQuestion ===
+                          index;
 
                         return (
                           <button
@@ -2385,9 +2526,9 @@ const Assessment = () => {
     );
   }
 
-  /* =========================================================
-     RESULT STAGE
-  ========================================================= */
+  /* =======================================================
+     RESULT
+  ======================================================= */
 
   if (stage === "result") {
     const passed =
@@ -2427,11 +2568,12 @@ const Assessment = () => {
                 </p>
 
                 <p className="text-5xl font-bold text-purple-700 mt-2">
-                  {result?.score || 0}%
+                  {result?.score ?? 0}%
                 </p>
 
                 <p className="text-gray-600 mt-3">
-                  Required: {PASSING_PERCENTAGE}%
+                  Required:{" "}
+                  {PASSING_PERCENTAGE}%
                 </p>
               </div>
 
@@ -2442,7 +2584,7 @@ const Assessment = () => {
                   </p>
 
                   <p className="font-bold text-lg">
-                    {result?.correct || 0}
+                    {result?.correct ?? 0}
                   </p>
                 </div>
 
@@ -2452,7 +2594,7 @@ const Assessment = () => {
                   </p>
 
                   <p className="font-bold text-lg">
-                    {result?.total || 0}
+                    {result?.total ?? 0}
                   </p>
                 </div>
 
@@ -2462,7 +2604,7 @@ const Assessment = () => {
                   </p>
 
                   <p className="font-bold text-lg">
-                    {result?.attempts || 0}
+                    {result?.attempts ?? 0}
                   </p>
                 </div>
 
@@ -2472,7 +2614,7 @@ const Assessment = () => {
                   </p>
 
                   <p className="font-bold text-lg">
-                    {result?.warnings || 0}
+                    {result?.warnings ?? 0}
                   </p>
                 </div>
               </div>
@@ -2485,7 +2627,8 @@ const Assessment = () => {
 
                   <p className="text-gray-600 text-sm">
                     You can now access courses associated
-                    with the {selectedTopic?.name} assessment.
+                    with the{" "}
+                    {selectedTopic?.name} assessment.
                   </p>
                 </div>
               )}
@@ -2515,17 +2658,18 @@ const Assessment = () => {
                 </div>
               )}
 
-              {disqualified && result?.reason && (
-                <div className="border border-gray-200 rounded-xl p-5 mb-8 text-left">
-                  <p className="font-semibold mb-1">
-                    Reason
-                  </p>
+              {disqualified &&
+                result?.reason && (
+                  <div className="border border-gray-200 rounded-xl p-5 mb-8 text-left">
+                    <p className="font-semibold mb-1">
+                      Reason
+                    </p>
 
-                  <p className="text-gray-600 text-sm">
-                    {result.reason}
-                  </p>
-                </div>
-              )}
+                    <p className="text-gray-600 text-sm">
+                      {result.reason}
+                    </p>
+                  </div>
+                )}
 
               <div className="flex flex-col sm:flex-row justify-center gap-3">
                 {passed ? (
@@ -2572,10 +2716,6 @@ const Assessment = () => {
       </div>
     );
   }
-
-  /* =========================================================
-     FALLBACK
-  ========================================================= */
 
   return null;
 };

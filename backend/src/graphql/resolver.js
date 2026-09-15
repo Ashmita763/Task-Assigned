@@ -6,7 +6,7 @@ const { sendRegistrationOtp } = require("../services/emailService");
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
 const generateOtp = () =>
-  Math.floor(100000 + Math.random() * 900000).toString();
+  Math.floor(100000 + Math.random() * 900000).toString();    
 
 const generateToken = (user) => {
   return jwt.sign(

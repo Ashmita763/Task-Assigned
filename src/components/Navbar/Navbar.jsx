@@ -20,7 +20,8 @@ const Navbar = () => {
         .split(" ")
         .filter(Boolean)
         .map((part) => part[0])
-        .join("")
+        .join("")   
+
         .slice(0, 2)
         .toUpperCase()
     : "?";
@@ -34,7 +35,7 @@ const Navbar = () => {
         <nav className="h-20 px-6 flex items-center gap-5">
 
           {/* Logo */}
-
+   
           <Link
             to="/"
             className="flex items-center gap-2 shrink-0"

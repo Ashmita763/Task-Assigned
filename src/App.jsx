@@ -67,7 +67,19 @@ function App() {
 
         <Route
           path="/assessments"
-          element={<Assessment />}
+          element={
+            <div className="min-h-screen bg-slate-50">
+              <Navbar />
+
+              <div className="flex pt-20">
+                <UserSidebar />
+
+                <main className="flex-1 min-w-0">
+                  <Assessment />
+                </main>
+              </div>
+            </div>
+          }
         />
 
       </Route>

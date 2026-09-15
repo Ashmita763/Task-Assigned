@@ -23,11 +23,6 @@ const Assessment = () => {
   // -----------------------------
   useEffect(() => {
 
-
-
-
-
-
     
     if (videoRef.current && mediaStream) {
       videoRef.current.srcObject = mediaStream;
@@ -387,9 +382,9 @@ const Assessment = () => {
 };
 
 
-// =====================================
+// 
 // Reusable Device Status Component
-// =====================================
+// 
 
 const DeviceItem = ({ name, status }) => {
 
