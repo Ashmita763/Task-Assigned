@@ -3,7 +3,12 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 
-dotenv.config();
+dotenv.config({ path: require("path").resolve(__dirname, "../.env") });
+console.log("DB_HOST:", process.env.DB_HOST);
+console.log("DB_USER:", process.env.DB_USER);
+console.log("DB_NAME:", process.env.DB_NAME);
+console.log("DB_PORT:", process.env.DB_PORT);
+
 
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@as-integrations/express5");
@@ -11,8 +16,12 @@ const { expressMiddleware } = require("@as-integrations/express5");
 const typeDefs = require("./graphql/typeDefs");
 const resolvers = require("./graphql/resolver");
 const { connectDB } = require("./config/db");
-
+   
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
 
 const startServer = async () => {
   const app = express();
@@ -23,7 +32,7 @@ const startServer = async () => {
   // Middleware
   app.use(
     cors({
-      origin: "http://localhost:5173",
+      origin: allowedOrigins,
     })
   );
 
@@ -53,7 +62,7 @@ const startServer = async () => {
         }
 
         return { user };
-      },
+      }, 
     })
   );
 

@@ -1,16 +1,31 @@
+
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
 const Auth = () => {
-  // Login / Register state
+  // ===================================================
+  // LOGIN / REGISTER STATE
+  // ===================================================
+
+  // true  = Login form
+  // false = Registration form
   const [isLogin, setIsLogin] = useState(true);
 
-  // Registration role
+  // ===================================================
+  // REGISTRATION ROLE
+  // ===================================================
+  // IMPORTANT:
+  // Admin is NOT included here.
+  // Only Student and Expert can register.
+
   const [registerRole, setRegisterRole] = useState("student");
 
-  // Form states
+  // ===================================================
+  // FORM STATES
+  // ===================================================
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -28,126 +43,279 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Error message
   const [error, setError] = useState("");
 
+  // React Router navigation
   const navigate = useNavigate();
 
+  // Authentication functions from AuthContext
   const { login, register } = useAuth();
 
-  // ==========================================
-  // LOGIN
-  // ==========================================
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
-    const result = await login(email, password);
+    try {
+      // Send email and password to AuthContext
+      const result = await login(email, password);
 
-    if (!result.success) {
-      setError(result.message);
-      return;
-    }
+      // Check whether login failed
+      if (!result?.success) {
+        setError(result?.message || "Login failed.");
+        return;
+      }
 
-    const role = result.user?.role;
+      // Get role returned from backend
+      const role = result?.user?.role;
 
-    if (role === "admin") {
-      navigate("/admin");
-    } else if (role === "expert") {
-      navigate("/expert-dashboard");
-    } else if (role === "student") {
-      navigate("/student-dashboard");
+
+      if (role === "admin") {
+        navigate("/admin");
+        return;
+      }
+
+      // =================================================
+      // EXPERT LOGIN
+      // =================================================
+
+      if (role === "expert") {
+        navigate("/expert-dashboard");
+        return;
+      }
+
+      // =================================================
+      // STUDENT LOGIN
+      // =================================================
+
+      if (role === "student") {
+        navigate("/dashboard");
+        return;
+      }
+
+      // =================================================
+      // INVALID ROLE
+      // =================================================
+
+      setError("Invalid user role.");
+    } catch (error) {
+      console.error("Login error:", error);
+
+      setError(
+        error?.message || "Something went wrong during login."
+      );
     }
   };
 
-  // ==========================================
+  // ===================================================
   // REGISTER
-  // ==========================================
+  // ===================================================
+  // Only Student and Expert can register.
+  //
+  // Admin registration is NOT available.
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Confirm password
+    // =================================================
+    // EXTRA SECURITY CHECK
+    // =================================================
+    // Even though the UI does not provide an Admin
+    // registration button, we also prevent an Admin
+    // role from being submitted from this component.
+
+    if (
+      registerRole !== "student" &&
+      registerRole !== "expert"
+    ) {
+      setError(
+        "Only Student and Expert accounts can register."
+      );
+      return;
+    }
+
+    // =================================================
+    // CONFIRM PASSWORD
+    // =================================================
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
-    // Password length
+    // =================================================
+    // PASSWORD VALIDATION
+    // =================================================
+
+    // Minimum 8 characters
     if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+      setError(
+        "Password must be at least 8 characters long."
+      );
       return;
     }
 
-    // Uppercase
+    // Uppercase letter
     if (!/[A-Z]/.test(password)) {
-      setError("Password must contain at least one uppercase letter.");
+      setError(
+        "Password must contain at least one uppercase letter."
+      );
       return;
     }
 
-    // Lowercase
+    // Lowercase letter
     if (!/[a-z]/.test(password)) {
-      setError("Password must contain at least one lowercase letter.");
+      setError(
+        "Password must contain at least one lowercase letter."
+      );
       return;
     }
 
     // Number
     if (!/\d/.test(password)) {
-      setError("Password must contain at least one number.");
+      setError(
+        "Password must contain at least one number."
+      );
       return;
     }
 
     // Special character
     if (!/[^A-Za-z0-9]/.test(password)) {
-      setError("Password must contain at least one special character.");
+      setError(
+        "Password must contain at least one special character."
+      );
       return;
     }
 
-    // Register user
-    const result = await register({
-      name,
-      email,
-      phone,
-      role: registerRole,
-      educationalLevel,
-      faculty,
-      expertise,
-      qualification,
-      experience,
-      password,
-    });
+    // =================================================
+    // REGISTER USER
+    // =================================================
 
-    if (!result.success) {
-      setError(result.message);
-      return;
-    }
-
-    // Clear passwords
-    setPassword("");
-    setConfirmPassword("");
-
-    // Go to OTP verification
-    navigate("/verify-otp", {
-      state: {
+    try {
+      const result = await register({
+        name,
         email,
-        mode: "register",
-      },
-    });
+        phone,
+
+        // IMPORTANT:
+        // This can ONLY be "student" or "expert".
+        // Admin is never sent from registration.
+        role: registerRole,
+
+        // =================================================
+        // STUDENT FIELDS
+        // =================================================
+
+        educationalLevel:
+          registerRole === "student"
+            ? educationalLevel
+            : null,
+
+        faculty:
+          registerRole === "student"
+            ? faculty
+            : null,
+
+        // =================================================
+        // EXPERT FIELDS
+        // =================================================
+
+        expertise:
+          registerRole === "expert"
+            ? expertise
+            : null,
+
+        qualification:
+          registerRole === "expert"
+            ? qualification
+            : null,
+
+        experience:
+          registerRole === "expert"
+            ? experience
+            : null,
+
+        password,
+      });
+
+      // Registration failed
+      if (!result?.success) {
+        setError(
+          result?.message || "Registration failed."
+        );
+        return;
+      }
+
+      // =================================================
+      // REGISTRATION SUCCESS
+      // =================================================
+
+      // Clear password fields
+      setPassword("");
+      setConfirmPassword("");
+
+      // Send user to OTP verification
+      navigate("/verify-otp", {
+        state: {
+          email,
+          mode: "register",
+        },
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+
+      setError(
+        error?.message ||
+          "Something went wrong during registration."
+      );
+    }
   };
 
-  // ==========================================
+  // ===================================================
+  // SWITCH TO LOGIN
+  // ===================================================
+
+  const handleLoginTab = () => {
+    setIsLogin(true);
+    setError("");
+
+    // Clear registration-specific error/state if needed
+  };
+
+  // ===================================================
+  // SWITCH TO STUDENT REGISTER
+  // ===================================================
+
+  const handleStudentTab = () => {
+    setIsLogin(false);
+    setRegisterRole("student");
+    setError("");
+  };
+
+  // ===================================================
+  // SWITCH TO EXPERT REGISTER
+  // ===================================================
+
+  const handleExpertTab = () => {
+    setIsLogin(false);
+    setRegisterRole("expert");
+    setError("");
+  };
+
+  // ===================================================
   // UI
-  // ==========================================
+  // ===================================================
 
   return (
     <div className="min-h-screen bg-purple-100 flex items-center justify-center px-4 sm:px-6 py-8">
 
       <div className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-center gap-10 lg:gap-16">
 
-        {/* ==========================================
+        {/* =================================================
             LEFT SIDE
-        ========================================== */}
+        ================================================= */}
 
         <div className="w-full md:w-1/2 text-center">
 
@@ -156,32 +324,36 @@ const Auth = () => {
           </h1>
 
           <p className="mt-5 text-gray-500 text-base sm:text-lg md:text-xl lg:text-2xl max-w-xl mx-auto leading-relaxed">
-            Explore courses and assessments from different categories for free,
-            build your skills, and connect with experts whenever you need
+            Explore courses and assessments from different
+            categories for free, build your skills, and
+            connect with experts whenever you need
             personalized guidance.
           </p>
 
         </div>
 
-        {/* ==========================================
-            RIGHT SIDE - AUTH CARD
-        ========================================== */}
+        {/* =================================================
+            RIGHT SIDE
+        ================================================= */}
 
         <div className="w-full md:w-1/2 max-w-md bg-white rounded-2xl shadow-xl p-5 sm:p-7 md:p-8">
 
-          {/* ==========================================
+          {/* =================================================
               LOGIN / STUDENT / EXPERT TABS
-          ========================================== */}
+              
+              IMPORTANT:
+              There is NO Admin registration tab.
 
-          <div className="grid grid-cols-2 gap-1 bg-gray-100 rounded-xl p-1 mb-7">
+              Admin uses Login only.
+          ================================================= */}
+
+          <div className="grid grid-cols-3 gap-1 bg-gray-100 rounded-xl p-1 mb-7">
 
             {/* LOGIN */}
+
             <button
               type="button"
-              onClick={() => {
-                setIsLogin(true);
-                setError("");
-              }}
+              onClick={handleLoginTab}
               className={`py-3 rounded-lg font-semibold transition ${
                 isLogin
                   ? "bg-white text-purple-600 shadow-sm"
@@ -191,16 +363,14 @@ const Auth = () => {
               Login
             </button>
 
-            {/* STUDENT */}
+            {/* STUDENT REGISTRATION */}
+
             <button
               type="button"
-              onClick={() => {
-                setIsLogin(false);
-                setRegisterRole("student");
-                setError("");
-              }}
+              onClick={handleStudentTab}
               className={`py-3 rounded-lg font-semibold transition ${
-                !isLogin && registerRole === "student"
+                !isLogin &&
+                registerRole === "student"
                   ? "bg-white text-purple-600 shadow-sm"
                   : "text-gray-400 hover:text-gray-600"
               }`}
@@ -208,16 +378,14 @@ const Auth = () => {
               Student
             </button>
 
-            {/* EXPERT */}
+            {/* EXPERT REGISTRATION */}
+
             <button
               type="button"
-              onClick={() => {
-                setIsLogin(false);
-                setRegisterRole("expert");
-                setError("");
-              }}
+              onClick={handleExpertTab}
               className={`py-3 rounded-lg font-semibold transition ${
-                !isLogin && registerRole === "expert"
+                !isLogin &&
+                registerRole === "expert"
                   ? "bg-white text-purple-600 shadow-sm"
                   : "text-gray-400 hover:text-gray-600"
               }`}
@@ -227,9 +395,9 @@ const Auth = () => {
 
           </div>
 
-          {/* ==========================================
+          {/* =================================================
               ERROR MESSAGE
-          ========================================== */}
+          ================================================= */}
 
           {error && (
             <div className="mb-5 p-3 bg-red-100 text-red-600 rounded-lg text-sm">
@@ -237,15 +405,19 @@ const Auth = () => {
             </div>
           )}
 
-          {/* ==========================================
+          {/* =================================================
               LOGIN FORM
-          ========================================== */}
+              
+              Admin uses this same form.
+          ================================================= */}
 
           {isLogin && (
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form
+              onSubmit={handleLogin}
+              className="space-y-5"
+            >
 
               <div>
-
                 <h2 className="text-2xl font-bold text-gray-900">
                   Welcome Back!!
                 </h2>
@@ -253,7 +425,6 @@ const Auth = () => {
                 <p className="text-gray-500 mt-2">
                   Login to continue learning.
                 </p>
-
               </div>
 
               {/* EMAIL */}
@@ -267,7 +438,9 @@ const Auth = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
                   placeholder="Enter your email"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
@@ -286,7 +459,9 @@ const Auth = () => {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
                   placeholder="Enter your password"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
@@ -329,12 +504,17 @@ const Auth = () => {
             </form>
           )}
 
-          {/* ==========================================
+          {/* =================================================
               REGISTER FORM
-          ========================================== */}
+
+              Only Student and Expert can reach this form.
+          ================================================= */}
 
           {!isLogin && (
-            <form onSubmit={handleRegister} className="space-y-5">
+            <form
+              onSubmit={handleRegister}
+              className="space-y-5"
+            >
 
               {/* CREATE ACCOUNT */}
 
@@ -350,9 +530,7 @@ const Auth = () => {
 
               </div>
 
-              {/* ==========================================
-                  FULL NAME
-              ========================================== */}
+              {/* FULL NAME */}
 
               <div>
 
@@ -363,7 +541,9 @@ const Auth = () => {
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
                   placeholder="Enter your full name"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
@@ -371,9 +551,7 @@ const Auth = () => {
 
               </div>
 
-              {/* ==========================================
-                  EMAIL
-              ========================================== */}
+              {/* EMAIL */}
 
               <div>
 
@@ -384,7 +562,9 @@ const Auth = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
                   placeholder="Enter your email"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
@@ -392,9 +572,7 @@ const Auth = () => {
 
               </div>
 
-              {/* ==========================================
-                  PHONE
-              ========================================== */}
+              {/* PHONE */}
 
               <div>
 
@@ -405,7 +583,9 @@ const Auth = () => {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) =>
+                    setPhone(e.target.value)
+                  }
                   placeholder="Enter your phone number"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
@@ -413,9 +593,9 @@ const Auth = () => {
 
               </div>
 
-              {/* ==========================================
+              {/* =================================================
                   STUDENT FIELDS
-              ========================================== */}
+              ================================================= */}
 
               {registerRole === "student" && (
                 <>
@@ -430,10 +610,15 @@ const Auth = () => {
 
                     <select
                       value={educationalLevel}
-                      onChange={(e) => setEducationalLevel(e.target.value)}
+                      onChange={(e) =>
+                        setEducationalLevel(
+                          e.target.value
+                        )
+                      }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                       required
                     >
+
                       <option value="">
                         Select educational level
                       </option>
@@ -468,10 +653,13 @@ const Auth = () => {
 
                     <select
                       value={faculty}
-                      onChange={(e) => setFaculty(e.target.value)}
+                      onChange={(e) =>
+                        setFaculty(e.target.value)
+                      }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                       required
                     >
+
                       <option value="">
                         Select faculty
                       </option>
@@ -495,14 +683,14 @@ const Auth = () => {
                 </>
               )}
 
-              {/* ==========================================
+              {/* =================================================
                   EXPERT FIELDS
-              ========================================== */}
+              ================================================= */}
 
               {registerRole === "expert" && (
                 <>
 
-                  {/* AREA OF EXPERTISE */}
+                  {/* EXPERTISE */}
 
                   <div>
 
@@ -513,7 +701,9 @@ const Auth = () => {
                     <input
                       type="text"
                       value={expertise}
-                      onChange={(e) => setExpertise(e.target.value)}
+                      onChange={(e) =>
+                        setExpertise(e.target.value)
+                      }
                       placeholder="e.g. Frontend Development"
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                       required
@@ -532,7 +722,9 @@ const Auth = () => {
                     <input
                       type="text"
                       value={qualification}
-                      onChange={(e) => setQualification(e.target.value)}
+                      onChange={(e) =>
+                        setQualification(e.target.value)
+                      }
                       placeholder="e.g. Bachelor's in Computer Science"
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                       required
@@ -552,7 +744,9 @@ const Auth = () => {
                       type="number"
                       min="0"
                       value={experience}
-                      onChange={(e) => setExperience(e.target.value)}
+                      onChange={(e) =>
+                        setExperience(e.target.value)
+                      }
                       placeholder="e.g. 5"
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                       required
@@ -563,9 +757,7 @@ const Auth = () => {
                 </>
               )}
 
-              {/* ==========================================
-                  PASSWORD
-              ========================================== */}
+              {/* PASSWORD */}
 
               <div>
 
@@ -576,7 +768,9 @@ const Auth = () => {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
                   placeholder="e.g. Abc@1234"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
@@ -584,9 +778,7 @@ const Auth = () => {
 
               </div>
 
-              {/* ==========================================
-                  CONFIRM PASSWORD
-              ========================================== */}
+              {/* CONFIRM PASSWORD */}
 
               <div>
 
@@ -597,7 +789,9 @@ const Auth = () => {
                 <input
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) =>
+                    setConfirmPassword(e.target.value)
+                  }
                   placeholder="Confirm your password"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
                   required
@@ -605,9 +799,7 @@ const Auth = () => {
 
               </div>
 
-              {/* ==========================================
-                  CREATE ACCOUNT BUTTON
-              ========================================== */}
+              {/* CREATE ACCOUNT */}
 
               <button
                 type="submit"

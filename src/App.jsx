@@ -11,6 +11,7 @@ import Auth from "./pages/Auth/Auth";
 import UserLanding from "./pages/UserLanding";
 import Assessment from "./pages/Assessment";
 import AdminDash from "./pages/Admin/AdminDash";
+import ExpertLanding from "./pages/ExpertLanding";
 
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyOTP from "./pages/VerifyOTP";
@@ -82,6 +83,13 @@ function App() {
           }
         />
 
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={["expert"]} />}>
+        <Route
+          path="/expert-dashboard"
+          element={<ExpertLanding />}
+        />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
