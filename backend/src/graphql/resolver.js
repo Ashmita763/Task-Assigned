@@ -416,6 +416,84 @@ const resolvers = {
       }
     },
 
+    resendRegistrationOtp: async (_, { email }) => {
+      try {
+        if (!email) {
+          return {
+            success: false,
+            message: "Email is required.",
+          };
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const [rows] = await query(
+          `
+            SELECT id, is_email_verified AS isEmailVerified
+            FROM users
+            WHERE email = ?
+          `,
+          [normalizedEmail]
+        );
+
+        const user = rows[0];
+
+        if (!user) {
+          return {
+            success: false,
+            message: "No account found for this email.",
+          };
+        }
+
+        if (user.isEmailVerified) {
+          return {
+            success: false,
+            message: "This email is already verified.",
+          };
+        }
+
+        const otp = generateOtp();
+        await sendRegistrationOtp(normalizedEmail, otp);
+        await query(
+          `
+            UPDATE users
+            SET
+              verification_otp = ?,
+              verification_otp_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)
+            WHERE id = ?
+          `,
+          [otp, user.id]
+        );
+
+        return {
+          success: true,
+          message: "A new verification code has been sent.",
+        };
+      } catch (error) {
+        console.error("Resend registration OTP error:", error);
+
+        if (error.message?.startsWith("Missing email configuration:")) {
+          return {
+            success: false,
+            message:
+              "Email service is not configured. Add SMTP settings to backend/.env.",
+          };
+        }
+
+        if (error.code === "EAUTH" || error.responseCode === 535) {
+          return {
+            success: false,
+            message:
+              "Email authentication failed. Check the SMTP credentials.",
+          };
+        }
+
+        return {
+          success: false,
+          message: "Could not send a verification code. Please try again.",
+        };
+      }
+    },
+
     // ===================================================
     // LOGIN
     // ===================================================

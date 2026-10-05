@@ -63,12 +63,25 @@ const Auth = () => {
 
       // Check whether login failed
       if (!result?.success) {
+        if (
+          result?.message ===
+          "Please verify your email before logging in."
+        ) {
+          navigate("/verify-otp", {
+            state: {
+              email,
+              mode: "register",
+            },
+          });
+          return;
+        }
+
         setError(result?.message || "Login failed.");
         return;
       }
 
       // Get role returned from backend
-      const role = result?.user?.role;
+      const role = result?.user?.role?.trim().toLowerCase();
 
 
       if (role === "admin") {

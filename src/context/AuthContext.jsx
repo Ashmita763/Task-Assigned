@@ -265,6 +265,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const resendRegistrationOtp = async (email) => {
+    try {
+      const query = `
+        mutation ResendRegistrationOtp($email: String!) {
+          resendRegistrationOtp(email: $email) {
+            success
+            message
+          }
+        }
+      `;
+
+      const data = await graphqlRequest(query, { email });
+      return {
+        success: Boolean(data?.resendRegistrationOtp?.success),
+        message:
+          data?.resendRegistrationOtp?.message ||
+          "Could not send a verification code.",
+      };
+    } catch (error) {
+      console.error("Resend registration OTP error:", error);
+      return {
+        success: false,
+        message: error.message || "Server error. Please try again.",
+      };
+    }
+  };
+
   // ===================================================
   // LOGIN
   // ===================================================
@@ -511,6 +538,7 @@ export const AuthProvider = ({ children }) => {
 
         forgotPassword,
         verifyRegistrationOtp,
+        resendRegistrationOtp,
         verifyOtp,
         resetPassword,
 

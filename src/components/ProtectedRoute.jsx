@@ -37,7 +37,18 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
     allowedRoles.length > 0 &&
     !allowedRoles.includes(user?.role)
   ) {
-    return <Navigate to="/dashboard" replace />;
+    const homeByRole = {
+      admin: "/admin",
+      expert: "/expert-dashboard",
+      student: "/dashboard",
+    };
+
+    return (
+      <Navigate
+        to={homeByRole[user?.role] || "/auth"}
+        replace
+      />
+    );
   }
 
   // User is authenticated and has permission
@@ -45,4 +56,3 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
 };
 
 export default ProtectedRoute;
-

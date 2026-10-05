@@ -5,11 +5,33 @@ import { useAuth } from "../context/AuthContext";
 const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyOtp, verifyRegistrationOtp } = useAuth();
+  const {
+    verifyOtp,
+    verifyRegistrationOtp,
+    resendRegistrationOtp,
+  } = useAuth();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [resending, setResending] = useState(false);
   const email = location.state?.email || "";
   const mode = location.state?.mode || "reset";
+
+  const handleResend = async () => {
+    setError("");
+    setNotice("");
+    setResending(true);
+
+    const result = await resendRegistrationOtp(email);
+    if (result.success) {
+      setOtp("");
+      setNotice(result.message);
+    } else {
+      setError(result.message);
+    }
+
+    setResending(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,6 +82,7 @@ const VerifyOTP = () => {
         </div>
 
         {error && <div className="text-red-600 text-sm mb-4 rounded-lg">{error}</div>}
+        {notice && <div className="text-green-700 text-sm mb-4">{notice}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-5">
@@ -84,6 +107,17 @@ const VerifyOTP = () => {
             Verify OTP
           </button>
         </form>
+
+        {mode === "register" && (
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resending || !email}
+            className="w-full mt-4 text-purple-600 hover:underline text-sm disabled:opacity-50"
+          >
+            {resending ? "Sending..." : "Resend verification code"}
+          </button>
+        )}
 
         <div className="text-center mt-5">
           <Link to="/forgot-password" className="text-purple-600 hover:underline text-sm">
